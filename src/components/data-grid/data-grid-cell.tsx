@@ -11,6 +11,13 @@ import {
   NumberCell,
   SelectCell,
   ShortTextCell,
+  LinkCell,
+  EmailCell,
+  PhoneCell,
+  RatingCell,
+  UserCell,
+  AttachmentCell,
+  FormulaCell,
 } from "@/components/data-grid/data-grid-cell-variants";
 
 interface DataGridCellProps<TData> {
@@ -121,6 +128,90 @@ export function DataGridCell<TData>({ cell, table }: DataGridCellProps<TData>) {
           rowIndex={rowIndex}
           columnId={columnId}
           isEditing={isEditing}
+          isFocused={isFocused}
+          isSelected={isSelected}
+        />
+      );
+    case "link":
+      return (
+        <LinkCell
+          cell={cell}
+          table={table}
+          rowIndex={rowIndex}
+          columnId={columnId}
+          isEditing={isEditing}
+          isFocused={isFocused}
+          isSelected={isSelected}
+        />
+      );
+    case "email":
+      return (
+        <EmailCell
+          cell={cell}
+          table={table}
+          rowIndex={rowIndex}
+          columnId={columnId}
+          isEditing={isEditing}
+          isFocused={isFocused}
+          isSelected={isSelected}
+        />
+      );
+    case "phone":
+      return (
+        <PhoneCell
+          cell={cell}
+          table={table}
+          rowIndex={rowIndex}
+          columnId={columnId}
+          isEditing={isEditing}
+          isFocused={isFocused}
+          isSelected={isSelected}
+        />
+      );
+    case "rating":
+      return (
+        <RatingCell
+          cell={cell}
+          table={table}
+          rowIndex={rowIndex}
+          columnId={columnId}
+          isEditing={false}
+          isFocused={isFocused}
+          isSelected={isSelected}
+        />
+      );
+    case "user":
+      return (
+        <UserCell
+          cell={cell}
+          table={table}
+          rowIndex={rowIndex}
+          columnId={columnId}
+          isEditing={isEditing}
+          isFocused={isFocused}
+          isSelected={isSelected}
+        />
+      );
+    case "attachment":
+      return (
+        <AttachmentCell
+          cell={cell}
+          table={table}
+          rowIndex={rowIndex}
+          columnId={columnId}
+          isEditing={false}
+          isFocused={isFocused}
+          isSelected={isSelected}
+        />
+      );
+    case "formula":
+      return (
+        <FormulaCell
+          cell={cell}
+          table={table}
+          rowIndex={rowIndex}
+          columnId={columnId}
+          isEditing={false}
           isFocused={isFocused}
           isSelected={isSelected}
         />

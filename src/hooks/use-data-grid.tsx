@@ -103,6 +103,7 @@ interface UseDataGridProps<TData>
     // biome-ignore lint/suspicious/noConfusingVoidType: void is needed here to allow functions without explicit return
     | void;
   onRowsDelete?: (rows: TData[], rowIndices: number[]) => void | Promise<void>;
+  onAddColumn?: (columnConfig: { type: string; name?: string; options?: any }) => void;
   rowHeight?: RowHeightValue;
   overscan?: number;
   autoFocus?: boolean | Partial<CellPosition>;
@@ -116,6 +117,7 @@ function useDataGrid<TData>({
   onDataChange,
   onRowAdd: onRowAddProp,
   onRowsDelete: onRowsDeleteProp,
+  onAddColumn: onAddColumnProp,
   rowHeight: rowHeightProp = DEFAULT_ROW_HEIGHT,
   overscan = OVERSCAN,
   initialState,
@@ -1476,11 +1478,13 @@ function useDataGrid<TData>({
     const headers = table.getFlatHeaders();
     const colSizes: { [key: string]: number } = {};
     for (const header of headers) {
-      colSizes[`--header-${header.id}-size`] = header.getSize();
-      colSizes[`--col-${header.column.id}-size`] = header.column.getSize();
+      const headerSize = header.getSize();
+      const columnSize = header.column.getSize();
+      colSizes[`--header-${header.id}-size`] = headerSize;
+      colSizes[`--col-${header.column.id}-size`] = columnSize;
     }
     return colSizes;
-  }, [table.getState().columnSizingInfo, table.getState().columnSizing]);
+  }, [table.getState().columnSizingInfo, table.getState().columnSizing, table.getState().columnOrder, columns.length]);
 
   const rowVirtualizer = useVirtualizer({
     count: table.getRowModel().rows.length,
@@ -1800,6 +1804,7 @@ function useDataGrid<TData>({
     searchState,
     columnSizeVars,
     onRowAdd: onRowAddProp ? onRowAdd : undefined,
+    onAddColumn: onAddColumnProp,
   };
 }
 

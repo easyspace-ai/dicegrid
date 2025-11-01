@@ -33,6 +33,35 @@ export type Cell =
     }
   | {
       variant: "date";
+    }
+  | {
+      variant: "link";
+    }
+  | {
+      variant: "email";
+    }
+  | {
+      variant: "phone";
+    }
+  | {
+      variant: "rating";
+      max?: number; // 默认 5
+    }
+  | {
+      variant: "user";
+      options?: Array<{ id: string; name: string; avatar?: string }>;
+    }
+  | {
+      variant: "attachment";
+    }
+  | {
+      variant: "formula";
+      expression?: string;
+      formatting?: {
+        type?: "text" | "number" | "date" | "boolean";
+        precision?: number;
+        dateFormat?: string;
+      };
     };
 
 export interface UpdateCell {

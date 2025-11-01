@@ -35,8 +35,12 @@ export function DataGridCellWrapper<TData>({
   const onClick = React.useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
       if (!isEditing) {
-        event.preventDefault();
+        // 先调用自定义的 onClick handler，如果它阻止了默认行为，就不再继续
         onClickProp?.(event);
+        if (event.defaultPrevented) {
+          return;
+        }
+        event.preventDefault();
         if (isFocused) {
           meta?.onCellEditingStart?.(rowIndex, columnId);
         } else {

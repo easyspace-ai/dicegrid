@@ -6,6 +6,7 @@ import { DraggableColumnHeaders } from "@/components/data-grid/data-grid-column-
 import { DataGridContextMenu } from "@/components/data-grid/data-grid-context-menu";
 import { DataGridRow } from "@/components/data-grid/data-grid-row";
 import { DataGridSearch } from "@/components/data-grid/data-grid-search";
+import { AddColumnMenu } from "@/components/data-grid/add-column-menu";
 import type { useDataGrid } from "@/hooks/use-data-grid";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +27,7 @@ export function DataGrid<TData>({
   searchState,
   columnSizeVars,
   onRowAdd,
+  onAddColumn,
   className,
   ...props
 }: DataGridProps<TData>) {
@@ -47,6 +49,10 @@ export function DataGrid<TData>({
     dragX: null,
   });
 
+  // 添加列菜单状态
+  const [isAddColumnMenuOpen, setIsAddColumnMenuOpen] = React.useState(false);
+  const addColumnTriggerRef = React.useRef<HTMLDivElement>(null);
+
   const onGridContextMenu = React.useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
       event.preventDefault();
@@ -66,6 +72,20 @@ export function DataGrid<TData>({
     [onRowAdd],
   );
 
+  const handleAddColumnConfirm = React.useCallback(
+    (payload: { type: string; name?: string; options?: any }) => {
+      onAddColumn?.(payload);
+      setIsAddColumnMenuOpen(false);
+    },
+    [onAddColumn],
+  );
+
+  const handleAddColumnClick = React.useCallback(() => {
+    if (onAddColumn) {
+      setIsAddColumnMenuOpen(true);
+    }
+  }, [onAddColumn]);
+
   return (
     <div
       data-slot="grid-wrapper"
@@ -78,7 +98,7 @@ export function DataGrid<TData>({
         role="grid"
         aria-label="Data grid"
         aria-rowcount={rows.length + (onRowAdd ? 1 : 0)}
-        aria-colcount={columns.length}
+        aria-colcount={columns.length + (onAddColumn ? 1 : 0)}
         data-slot="grid"
         tabIndex={0}
         ref={dataGridRef}
@@ -111,6 +131,8 @@ export function DataGrid<TData>({
                 headerElementRef={headerRef as React.RefObject<HTMLElement>}
                 gridContainerRef={dataGridRef as React.RefObject<HTMLElement>}
                 onDragStateChange={setDragState}
+                onAddColumnClick={onAddColumn ? handleAddColumnClick : undefined}
+                addColumnTriggerRef={addColumnTriggerRef as React.RefObject<HTMLDivElement>}
               />
             </div>
           ))}
@@ -268,6 +290,14 @@ export function DataGrid<TData>({
           </div>
         )}
       </div>
+      {onAddColumn && (
+        <AddColumnMenu
+          isOpen={isAddColumnMenuOpen}
+          onClose={() => setIsAddColumnMenuOpen(false)}
+          onConfirm={handleAddColumnConfirm}
+          triggerRef={addColumnTriggerRef}
+        />
+      )}
     </div>
   );
 }

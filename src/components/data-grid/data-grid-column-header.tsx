@@ -22,6 +22,14 @@ import {
   PinOffIcon,
   TextInitialIcon,
   XIcon,
+  Plus,
+  Link as LinkIcon,
+  Mail as MailIcon,
+  Phone as PhoneIcon,
+  Star as StarIcon,
+  User as UserIcon,
+  Image as ImageIcon,
+  Code as CodeIcon,
 } from "lucide-react";
 import * as React from "react";
 import {
@@ -82,6 +90,20 @@ function getColumnVariant(variant?: Cell["variant"]): {
       return { icon: CheckSquareIcon, label: "Checkbox" };
     case "date":
       return { icon: CalendarIcon, label: "Date" };
+    case "link":
+      return { icon: LinkIcon, label: "Link" };
+    case "email":
+      return { icon: MailIcon, label: "Email" };
+    case "phone":
+      return { icon: PhoneIcon, label: "Phone" };
+    case "rating":
+      return { icon: StarIcon, label: "Rating" };
+    case "user":
+      return { icon: UserIcon, label: "User" };
+    case "attachment":
+      return { icon: ImageIcon, label: "Attachment" };
+    case "formula":
+      return { icon: CodeIcon, label: "Formula" };
     default:
       return null;
   }
@@ -565,6 +587,8 @@ interface DraggableColumnHeadersProps<TData> {
     overId: string | null;
     dragX: number | null; // 拖动时的鼠标 X 坐标
   }) => void;
+  onAddColumnClick?: () => void;
+  addColumnTriggerRef?: React.RefObject<HTMLDivElement>;
 }
 
 // 全局拖动状态，用于禁用列宽调整
@@ -577,6 +601,8 @@ export function DraggableColumnHeaders<TData>({
   headerElementRef,
   gridContainerRef,
   onDragStateChange,
+  onAddColumnClick,
+  addColumnTriggerRef,
 }: DraggableColumnHeadersProps<TData>) {
   const [activeId, setActiveId] = React.useState<string | null>(null);
   const [overId, setOverId] = React.useState<string | null>(null);
@@ -712,6 +738,7 @@ export function DraggableColumnHeaders<TData>({
               key={header.id}
               role="columnheader"
               aria-colindex={colIndex + 1}
+              data-column-id={header.column.id}
               aria-sort={
                 currentSort?.desc === false
                   ? "ascending"
@@ -750,6 +777,38 @@ export function DraggableColumnHeaders<TData>({
           );
         })}
       </SortableContext>
+      
+      {/* 添加列按钮 */}
+      {onAddColumnClick && (
+        <div
+          ref={addColumnTriggerRef}
+          role="columnheader"
+          aria-colindex={headers.length + 1}
+          data-slot="grid-header-cell-add-column"
+          tabIndex={-1}
+          className="relative border-r"
+          style={{
+            width: '70px',
+            minWidth: '70px',
+          }}
+        >
+          <div
+            className="flex size-full items-center justify-center p-2 text-sm hover:bg-accent/40 cursor-pointer transition-colors"
+            onClick={onAddColumnClick}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onAddColumnClick();
+              }
+            }}
+            tabIndex={0}
+            role="button"
+            aria-label="Add column"
+          >
+            <Plus className="size-4 text-muted-foreground" />
+          </div>
+        </div>
+      )}
       
       <DragOverlay
         style={{

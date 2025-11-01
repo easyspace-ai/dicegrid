@@ -18,6 +18,7 @@ interface SkateTrick {
   bestScore?: number;
   location?: string;
   dateAttempted?: string;
+  attachments?: Array<{ name: string; url: string }>;
 }
 
 const skateSpots = [
@@ -127,7 +128,7 @@ const skateTricks = {
 } as const;
 
 function generateTrickData(): SkateTrick[] {
-  return Array.from({ length: 30 }, () => {
+  return Array.from({ length: 30 }, (_, index) => {
     const variant = faker.helpers.arrayElement(
       Object.keys(skateTricks) as Array<keyof typeof skateTricks>,
     );
@@ -168,6 +169,26 @@ function generateTrickData(): SkateTrick[] {
 
     const difficulty = getDifficulty(trickName);
 
+    // 为前几行添加示例附件数据
+    const attachments: Array<{ name: string; url: string }> = [];
+    if (index < 5) {
+      // 前5行添加一些示例附件
+      const fileNames = [
+        "trick-analysis.pdf",
+        "performance-review.jpg",
+        "competition-video.mp4",
+        "training-notes.pdf",
+      ];
+      const count = faker.number.int({ min: 0, max: 2 });
+      for (let i = 0; i < count; i++) {
+        const fileName = faker.helpers.arrayElement(fileNames);
+        attachments.push({
+          name: fileName,
+          url: `https://example.com/files/${fileName}`, // 示例URL
+        });
+      }
+    }
+
     return {
       id: faker.string.nanoid(),
       trickName,
@@ -188,6 +209,7 @@ function generateTrickData(): SkateTrick[] {
           })
           .toISOString()
           .split("T")[0] ?? "",
+      attachments: attachments.length > 0 ? attachments : undefined,
     };
   });
 }
@@ -196,8 +218,7 @@ const initialData: SkateTrick[] = generateTrickData();
 
 export default function DataGridDemo() {
   const [data, setData] = React.useState<SkateTrick[]>(initialData);
-
-  const columns = React.useMemo<ColumnDef<SkateTrick>[]>(
+  const [columns, setColumns] = React.useState<ColumnDef<SkateTrick>[]>(
     () => [
       {
         id: "trickName",
@@ -317,8 +338,19 @@ export default function DataGridDemo() {
         },
         minSize: 130,
       },
+      {
+        id: "attachments",
+        accessorKey: "attachments",
+        header: "附件",
+        meta: {
+          cell: {
+            variant: "attachment",
+          },
+        },
+        minSize: 200,
+        size: 200,
+      },
     ],
-    [],
   );
 
   const onRowAdd = React.useCallback(() => {
@@ -330,11 +362,48 @@ export default function DataGridDemo() {
     };
   }, [data.length]);
 
+  const onAddColumn = React.useCallback(
+    (columnConfig: { type: string; name?: string; options?: any }) => {
+      const columnId = `column_${Date.now()}`;
+      const columnName = columnConfig.name || `New Column ${columns.length + 1}`;
+      
+      // 映射字段类型到列定义
+      const newColumn: ColumnDef<SkateTrick> = {
+        id: columnId,
+        accessorFn: (row) => {
+          // 使用动态访问，因为新列的 key 可能不在类型定义中
+          return (row as any)[columnId];
+        },
+        header: columnName,
+        meta: {
+          cell: {
+            variant: columnConfig.type as any,
+            ...(columnConfig.options?.options && {
+              options: columnConfig.options.options.map((opt: { name: string }) => ({
+                label: opt.name,
+                value: opt.name,
+              })),
+            }),
+            ...(columnConfig.options?.expression && {
+              expression: columnConfig.options.expression,
+            }),
+          },
+        },
+        minSize: 150,
+        size: 150, // 设置初始宽度
+      };
+
+      setColumns((prev) => [...prev, newColumn]);
+    },
+    [columns.length],
+  );
+
   const { table, ...dataGridProps } = useDataGrid({
     columns,
     data,
     onDataChange: setData,
     onRowAdd,
+    onAddColumn,
     enableSearch: true,
   });
 
