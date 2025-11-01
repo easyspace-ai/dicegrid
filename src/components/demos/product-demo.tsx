@@ -5,7 +5,10 @@ import type { ColumnDef } from "@tanstack/react-table";
 import * as React from "react";
 import { DataGrid } from "@/components/data-grid/data-grid";
 import { DataGridKeyboardShortcuts } from "@/components/data-grid/data-grid-keyboard-shortcuts";
+import { DataGridToolbar } from "@/components/data-grid/data-grid-toolbar";
 import { useDataGrid } from "@/hooks/use-data-grid";
+import type { FilterCondition } from "@/components/data-grid/data-grid-filter-menu";
+import { applyFilters } from "@/utils/data-grid-filter";
 
 interface SkateTrick {
   id: string;
@@ -218,6 +221,7 @@ const initialData: SkateTrick[] = generateTrickData();
 
 export default function DataGridDemo() {
   const [data, setData] = React.useState<SkateTrick[]>(initialData);
+  const [filterConditions, setFilterConditions] = React.useState<FilterCondition[]>([]);
   const [columns, setColumns] = React.useState<ColumnDef<SkateTrick>[]>(
     () => [
       {
@@ -363,6 +367,7 @@ export default function DataGridDemo() {
   }, [data.length]);
 
   const onAddColumn = React.useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (columnConfig: { type: string; name?: string; options?: any }) => {
       const columnId = `column_${Date.now()}`;
       const columnName = columnConfig.name || `New Column ${columns.length + 1}`;
@@ -372,11 +377,13 @@ export default function DataGridDemo() {
         id: columnId,
         accessorFn: (row) => {
           // 使用动态访问，因为新列的 key 可能不在类型定义中
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return (row as any)[columnId];
         },
         header: columnName,
         meta: {
           cell: {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             variant: columnConfig.type as any,
             ...(columnConfig.options?.options && {
               options: columnConfig.options.options.map((opt: { name: string }) => ({
@@ -405,9 +412,29 @@ export default function DataGridDemo() {
     [columns.length],
   );
 
+  // 应用筛选条件
+  const filteredData = React.useMemo(() => {
+    return applyFilters({
+      data,
+      conditions: filterConditions,
+      getFieldValue: (row, fieldId) => {
+        // 处理动态列和静态列
+        if (fieldId in row) {
+          return (row as unknown as Record<string, unknown>)[fieldId];
+        }
+        // 对于动态添加的列，尝试从 accessorFn 获取
+        const column = columns.find((col) => col.id === fieldId);
+        if (column && "accessorFn" in column && column.accessorFn) {
+          return column.accessorFn(row, 0);
+        }
+        return undefined;
+      },
+    });
+  }, [data, filterConditions, columns]);
+
   const { table, ...dataGridProps } = useDataGrid({
     columns,
-    data,
+    data: filteredData,
     onDataChange: setData,
     onRowAdd,
     onAddColumn,
@@ -417,7 +444,14 @@ export default function DataGridDemo() {
   return (
     <>
       <DataGridKeyboardShortcuts enableSearch={!!dataGridProps.searchState} />
-      <DataGrid {...dataGridProps} table={table} height={340} />
+      <div className="flex flex-col rounded-md border">
+        <DataGridToolbar
+          table={table}
+          filterConditions={filterConditions}
+          onFilterConditionsChange={setFilterConditions}
+        />
+        <DataGrid {...dataGridProps} table={table} height={340} />
+      </div>
     </>
   );
 }
