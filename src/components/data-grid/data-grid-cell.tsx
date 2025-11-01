@@ -18,6 +18,7 @@ import {
   UserCell,
   AttachmentCell,
   FormulaCell,
+  AIFieldCell,
 } from "@/components/data-grid/data-grid-cell-variants";
 
 interface DataGridCellProps<TData> {
@@ -207,6 +208,18 @@ export function DataGridCell<TData>({ cell, table }: DataGridCellProps<TData>) {
     case "formula":
       return (
         <FormulaCell
+          cell={cell}
+          table={table}
+          rowIndex={rowIndex}
+          columnId={columnId}
+          isEditing={false}
+          isFocused={isFocused}
+          isSelected={isSelected}
+        />
+      );
+    case "ai":
+      return (
+        <AIFieldCell
           cell={cell}
           table={table}
           rowIndex={rowIndex}

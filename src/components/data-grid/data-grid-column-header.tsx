@@ -30,6 +30,7 @@ import {
   User as UserIcon,
   Image as ImageIcon,
   Code as CodeIcon,
+  Bot as BotIcon,
 } from "lucide-react";
 import * as React from "react";
 import {
@@ -104,6 +105,8 @@ function getColumnVariant(variant?: Cell["variant"]): {
       return { icon: ImageIcon, label: "Attachment" };
     case "formula":
       return { icon: CodeIcon, label: "Formula" };
+    case "ai":
+      return { icon: BotIcon, label: "AI" };
     default:
       return null;
   }

@@ -1,9 +1,10 @@
 "use client";
 
 import type { Cell, Table } from "@tanstack/react-table";
-import { Check, X, Link as LinkIcon, Mail, Phone, Star, User, Image as ImageIcon, ExternalLink, Plus, Code } from "lucide-react";
+import { Check, X, Link as LinkIcon, Mail, Phone, Star, User, Image as ImageIcon, ExternalLink, Plus, Code, Bot, Loader2, RefreshCw, AlertCircle } from "lucide-react";
 import * as React from "react";
 import { DataGridCellWrapper } from "@/components/data-grid/data-grid-cell-wrapper";
+import { useAIField } from "@/hooks/use-ai-field";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -2235,6 +2236,160 @@ export function FormulaCell<TData>({
               {displayValue}
             </span>
           </>
+        )}
+      </div>
+    </DataGridCellWrapper>
+  );
+}
+
+// AI Field Cell - AI 字段类型
+export function AIFieldCell<TData>({
+  cell,
+  table,
+  rowIndex,
+  columnId,
+  isFocused,
+  isSelected,
+}: CellVariantProps<TData>) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const meta = table.options.meta;
+
+  const { state, result, error, generate, regenerate } = useAIField({
+    cell,
+    table,
+    rowIndex,
+    columnId,
+  });
+
+  const cellOpts = cell.column.columnDef.meta?.cell;
+  const aiConfig = cellOpts?.variant === "ai" ? cellOpts : null;
+  const trigger = aiConfig?.trigger || "manual";
+
+  // 获取当前单元格的值（可能是之前生成的结果）
+  const currentValue = cell.getValue() as string | null | undefined;
+
+  // 显示的内容
+  const displayContent = React.useMemo(() => {
+    if (state === "generating") {
+      return "正在生成...";
+    }
+    if (state === "error") {
+      return error?.message || "生成失败";
+    }
+    if (state === "success" || state === "cached") {
+      return result || currentValue || "";
+    }
+    return currentValue || "";
+  }, [state, result, currentValue, error]);
+
+  const handleClick = React.useCallback(
+    (event: React.MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      if (trigger === "manual" && state !== "generating") {
+        if (result || currentValue) {
+          regenerate();
+        } else {
+          generate();
+        }
+      }
+    },
+    [trigger, state, result, currentValue, generate, regenerate],
+  );
+
+  const onWrapperKeyDown = React.useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (isFocused && (event.key === "Enter" || event.key === " ")) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (trigger === "manual" && state !== "generating") {
+          if (result || currentValue) {
+            regenerate();
+          } else {
+            generate();
+          }
+        }
+      }
+    },
+    [isFocused, trigger, state, result, currentValue, generate, regenerate],
+  );
+
+  React.useEffect(() => {
+    if (
+      isFocused &&
+      !meta?.searchOpen &&
+      !meta?.isScrolling &&
+      containerRef.current
+    ) {
+      containerRef.current.focus();
+    }
+  }, [isFocused, meta?.searchOpen, meta?.isScrolling]);
+
+  return (
+    <DataGridCellWrapper
+      ref={containerRef}
+      cell={cell}
+      table={table}
+      rowIndex={rowIndex}
+      columnId={columnId}
+      isEditing={false}
+      isFocused={isFocused}
+      isSelected={isSelected}
+      onClick={handleClick}
+      onKeyDown={onWrapperKeyDown}
+      className={cn(
+        "cursor-pointer",
+        trigger === "manual" && "hover:bg-accent/50",
+      )}
+    >
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        {/* 状态图标 */}
+        {state === "generating" ? (
+          <Loader2 className="size-4 shrink-0 text-primary animate-spin" />
+        ) : state === "error" ? (
+          <AlertCircle className="size-4 shrink-0 text-destructive" />
+        ) : state === "cached" ? (
+          <Bot className="size-4 shrink-0 text-muted-foreground" />
+        ) : (
+          <Bot className="size-4 shrink-0 text-muted-foreground" />
+        )}
+
+        {/* 内容 */}
+        <div className="min-w-0 flex-1">
+          {state === "generating" ? (
+            <span className="text-sm text-muted-foreground">{displayContent}</span>
+          ) : state === "error" ? (
+            <span className="text-sm text-destructive">{displayContent}</span>
+          ) : displayContent ? (
+            <span data-slot="grid-cell-content" className="text-sm truncate">
+              {displayContent}
+            </span>
+          ) : trigger === "manual" ? (
+            <span className="text-xs text-muted-foreground">点击生成内容</span>
+          ) : (
+            <span className="text-xs text-muted-foreground">等待自动生成...</span>
+          )}
+        </div>
+
+        {/* 手动触发按钮 */}
+        {trigger === "manual" && state !== "generating" && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (result || currentValue) {
+                regenerate();
+              } else {
+                generate();
+              }
+            }}
+            className="shrink-0 rounded-md p-1 hover:bg-accent transition-colors"
+            tabIndex={-1}
+            title={result || currentValue ? "重新生成" : "生成内容"}
+          >
+            <RefreshCw className="size-3.5 text-muted-foreground" />
+          </button>
         )}
       </div>
     </DataGridCellWrapper>

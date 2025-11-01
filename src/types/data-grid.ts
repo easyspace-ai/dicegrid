@@ -62,6 +62,21 @@ export type Cell =
         precision?: number;
         dateFormat?: string;
       };
+    }
+  | {
+      variant: "ai";
+      // AI 任务类型
+      task?: "generate" | "summarize" | "extract" | "translate" | "classify" | "custom";
+      // 自定义提示词（用于 custom 任务）
+      prompt?: string;
+      // 依赖的字段（字段ID或列头名称列表）
+      dependencies?: string[];
+      // 触发模式
+      trigger?: "auto" | "manual" | "on-create";
+      // 是否启用缓存
+      cache?: boolean;
+      // 最大重试次数
+      maxRetries?: number;
     };
 
 export interface UpdateCell {

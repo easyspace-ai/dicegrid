@@ -19,6 +19,7 @@ import {
   Check,
   Sparkles,
   Code,
+  Bot,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -215,6 +216,16 @@ const fieldTypes: FieldType[] = [
     popular: true,
     keywords: ['公式', 'formula', '计算', '表达式'],
   },
+  {
+    id: 'ai',
+    name: 'AI 字段',
+    icon: Bot,
+    description: '使用 AI 自动生成内容',
+    category: 'advanced',
+    color: '#10b981',
+    popular: true,
+    keywords: ['AI', '人工智能', '自动生成', '智能'],
+  },
   
   // 协作类型
   {
@@ -339,6 +350,14 @@ export function AddColumnMenu({ isOpen, onClose, onConfirm, onSelect, triggerRef
         setFieldOptions({ options: [] });
       } else if (fieldType === 'formula') {
         setFieldOptions({ expression: '' });
+      } else if (fieldType === 'ai') {
+        setFieldOptions({ 
+          task: 'custom',
+          prompt: '',
+          dependencies: [],
+          trigger: 'manual',
+          cache: true,
+        });
       } else {
         setFieldOptions({});
       }
@@ -523,6 +542,8 @@ export function AddColumnMenu({ isOpen, onClose, onConfirm, onSelect, triggerRef
                 <SelectOptionsEditor value={fieldOptions} onChange={setFieldOptions} />
               ) : selectedType?.id === 'formula' ? (
                 <FormulaEditor value={fieldOptions} onChange={setFieldOptions} />
+              ) : selectedType?.id === 'ai' ? (
+                <AIFieldEditor value={fieldOptions} onChange={setFieldOptions} />
               ) : (
                 <div className="text-xs text-muted-foreground">该字段暂无额外配置</div>
               )}
@@ -640,6 +661,134 @@ function FormulaEditor({ value, onChange }: { value: any; onChange: (val: any) =
           <li>使用 {'{字段名}'} 引用其他字段</li>
           <li>支持基本数学运算：+, -, *, /</li>
           <li>支持字符串连接：+</li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+// AI 字段编辑器
+function AIFieldEditor({ value, onChange }: { value: any; onChange: (val: any) => void }) {
+  const task = value?.task ?? 'custom';
+  const prompt = value?.prompt ?? '';
+  const dependencies = value?.dependencies ?? [];
+  const trigger = value?.trigger ?? 'manual';
+  const cache = value?.cache ?? true;
+
+  const taskOptions = [
+    { value: 'generate', label: '生成内容' },
+    { value: 'summarize', label: '总结' },
+    { value: 'extract', label: '提取信息' },
+    { value: 'translate', label: '翻译' },
+    { value: 'classify', label: '分类' },
+    { value: 'custom', label: '自定义提示' },
+  ];
+
+  const triggerOptions = [
+    { value: 'manual', label: '手动触发（点击刷新按钮）' },
+    { value: 'auto', label: '自动触发（依赖字段变化时）' },
+    { value: 'on-create', label: '仅创建时生成' },
+  ];
+
+  const handleTaskChange = (newTask: string) => {
+    onChange({ ...value, task: newTask });
+  };
+
+  const handlePromptChange = (newPrompt: string) => {
+    onChange({ ...value, prompt: newPrompt });
+  };
+
+  const handleTriggerChange = (newTrigger: string) => {
+    onChange({ ...value, trigger: newTrigger });
+  };
+
+  const handleCacheChange = (checked: boolean) => {
+    onChange({ ...value, cache: checked });
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      {/* 任务类型 */}
+      <div>
+        <div className="mb-2 text-sm font-semibold text-foreground">AI 任务类型</div>
+        <div className="flex flex-col gap-1.5">
+          {taskOptions.map((option) => (
+            <label
+              key={option.value}
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <input
+                type="radio"
+                name="ai-task"
+                value={option.value}
+                checked={task === option.value}
+                onChange={(e) => handleTaskChange(e.target.value)}
+                className="size-4"
+              />
+              <span className="text-sm">{option.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* 自定义提示词 */}
+      {task === 'custom' && (
+        <div>
+          <div className="mb-2 text-sm font-semibold text-foreground">自定义提示词</div>
+          <textarea
+            value={prompt}
+            onChange={(e) => handlePromptChange(e.target.value)}
+            placeholder="输入提示词，例如：基于 {Trick name} 和 {Score} 生成一段描述"
+            className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20 resize-none"
+          />
+          <div className="mt-1 text-xs text-muted-foreground">
+            使用 {'{字段名}'} 引用其他字段的值
+          </div>
+        </div>
+      )}
+
+      {/* 触发模式 */}
+      <div>
+        <div className="mb-2 text-sm font-semibold text-foreground">触发模式</div>
+        <div className="flex flex-col gap-1.5">
+          {triggerOptions.map((option) => (
+            <label
+              key={option.value}
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <input
+                type="radio"
+                name="ai-trigger"
+                value={option.value}
+                checked={trigger === option.value}
+                onChange={(e) => handleTriggerChange(e.target.value)}
+                className="size-4"
+              />
+              <span className="text-sm">{option.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* 缓存选项 */}
+      <div>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={cache}
+            onChange={(e) => handleCacheChange(e.target.checked)}
+            className="size-4"
+          />
+          <span className="text-sm">启用缓存（相同输入复用结果）</span>
+        </label>
+      </div>
+
+      <div className="rounded-md bg-muted/50 p-2 text-xs text-muted-foreground">
+        <p className="font-semibold mb-1">提示：</p>
+        <ul className="list-disc list-inside space-y-0.5">
+          <li>演示模式使用模拟 AI，不会调用真实 API</li>
+          <li>真实 API 接入后，此处配置会自动生效</li>
+          <li>依赖字段需要在创建字段后手动配置</li>
         </ul>
       </div>
     </div>

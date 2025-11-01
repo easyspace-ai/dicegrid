@@ -387,6 +387,13 @@ export default function DataGridDemo() {
             ...(columnConfig.options?.expression && {
               expression: columnConfig.options.expression,
             }),
+            ...(columnConfig.options?.task && {
+              task: columnConfig.options.task,
+              prompt: columnConfig.options.prompt,
+              dependencies: columnConfig.options.dependencies,
+              trigger: columnConfig.options.trigger,
+              cache: columnConfig.options.cache,
+            }),
           },
         },
         minSize: 150,
